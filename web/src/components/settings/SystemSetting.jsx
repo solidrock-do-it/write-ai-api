@@ -120,7 +120,12 @@ const SystemSetting = () => {
   const [ipFilterMode, setIpFilterMode] = useState(true);
   const [domainList, setDomainList] = useState([]);
   const [ipList, setIpList] = useState([]);
-  const [allowedPorts, setAllowedPorts] = useState([]);
+  const [allowedPorts, setAllowedPorts] = useState([
+    '80',
+    '443',
+    '8080',
+    '8443',
+  ]);
 
   const getOptions = async () => {
     setLoading(true);
@@ -229,8 +234,30 @@ const SystemSetting = () => {
     setLoading(false);
   };
 
+  const getPexelsKeys = async () => {
+    try {
+      const res = await API.get('/api/pexels/keys');
+      const { success, message, data } = res.data;
+      if (success) {
+        const keysArray = Array.isArray(data) ? data : [];
+        if (formApiRef.current) {
+          // 单独更新 pexelsKeys 字段的值
+          formApiRef.current.setValue('pexelsKeys', keysArray.join('\n'));
+        }
+      } else {
+        showError(message);
+      }
+    } catch (error) {
+      showError(error.message);
+    }
+  };
+
   useEffect(() => {
-    getOptions();
+    const initSettings = async () => {
+      await getOptions(); // 先等待配置加载完成和 Form 渲染
+      await getPexelsKeys(); // 再获取 Pexels keys 并设置表单值
+    };
+    initSettings();
   }, []);
 
   const updateOptions = async (options) => {
@@ -607,6 +634,30 @@ const SystemSetting = () => {
     }
   };
 
+  const submitPexelsKeys = async () => {
+    try {
+      // 使用formApi直接获取当前表单值
+      const formValues = formApiRef.current?.getValues() || {};
+      const pexelsKeysValue = formValues.pexelsKeys || '';
+      const res = await API.put('/api/pexels/keys', {
+        keys: pexelsKeysValue
+          .split('\n')
+          .map((key) => key.trim())
+          .filter((key) => key !== ''),
+      });
+      const { success, message } = res.data;
+      if (success) {
+        showSuccess(t('Pexels keys 更新成功'));
+        // 重新获取以确认保存成功
+        await getPexelsKeys();
+      } else {
+        showError(message);
+      }
+    } catch (error) {
+      showError(error.message);
+    }
+  };
+
   const submitPasskeySettings = async () => {
     // 使用formApi直接获取当前表单值
     const formValues = formApiRef.current?.getValues() || {};
@@ -704,6 +755,26 @@ const SystemSetting = () => {
               </Card>
 
               <Card>
+                <Form.Section text={t('Pexels 设置')}>
+                  <Row
+                    gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
+                  >
+                    <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+                      <Form.TextArea
+                        field='pexelsKeys'
+                        label={t('Pexels API Keys')}
+                        placeholder={t('每行一个 API Key')}
+                        rows={6}
+                      />
+                    </Col>
+                  </Row>
+                  <Button onClick={submitPexelsKeys}>
+                    {t('保存 Pexels 设置')}
+                  </Button>
+                </Form.Section>
+              </Card>
+
+              <Card>
                 <Form.Section text={t('代理设置')}>
                   <Banner
                     type='info'
@@ -720,8 +791,8 @@ const SystemSetting = () => {
                       rel='noreferrer'
                     >
                       new-api-worker
-                    </a>
-                    {' '}{t('或其兼容new-api-worker格式的其他版本')}
+                    </a>{' '}
+                    {t('或其兼容new-api-worker格式的其他版本')}
                   </Text>
                   <Row
                     gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
@@ -1144,7 +1215,7 @@ const SystemSetting = () => {
                     gutter={{ xs: 8, sm: 16, md: 24, lg: 24, xl: 24, xxl: 24 }}
                     style={{ marginTop: 16 }}
                   >
-                    <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+                    <Col xs={24} sm={24} md={24} lg={12} xl={12}>
                       <Form.Checkbox
                         field="['passkey.allow_insecure_origin']"
                         noLabel

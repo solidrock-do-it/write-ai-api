@@ -237,6 +237,12 @@ func InitResources() error {
 		return err
 	}
 
+	// Ensure material providers required by app exist (e.g. pexels)
+	if err := model.EnsureMaterialProvider("pexels"); err != nil {
+		common.SysLog("failed to ensure pexels material provider: " + err.Error())
+		// do not return error; non-fatal
+	}
+
 	model.CheckSetup()
 
 	// Initialize options, should after model.InitDB()

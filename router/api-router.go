@@ -255,5 +255,12 @@ func SetApiRouter(router *gin.Engine) {
 			modelsRoute.PUT("/", controller.UpdateModelMeta)
 			modelsRoute.DELETE("/:id", controller.DeleteModelMeta)
 		}
+
+		pexelsRoute := apiRouter.Group("/pexels")
+		pexelsRoute.Use(middleware.AdminAuth())
+		{
+			pexelsRoute.GET("/keys", controller.GetPexelsKeys)
+			pexelsRoute.PUT("/keys", controller.UpdatePexelsKeys)
+		}
 	}
 }

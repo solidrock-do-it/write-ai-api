@@ -43,12 +43,17 @@ func GetTwoFAByUserId(userId int) (*TwoFA, error) {
 		return nil, errors.New("用户ID不能为空")
 	}
 
+	var count int64
+	if err := DB.Model(&TwoFA{}).Where("user_id = ?", userId).Count(&count).Error; err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return nil, nil // 返回nil表示未设置2FA
+	}
+
 	var twoFA TwoFA
 	err := DB.Where("user_id = ?", userId).First(&twoFA).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil // 返回nil表示未设置2FA
-		}
 		return nil, err
 	}
 
