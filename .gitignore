@@ -19,4 +19,3 @@ tiktoken_cache
 
 electron/node_modules
 electron/dist
-web/bun.lock
