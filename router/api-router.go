@@ -257,7 +257,7 @@ func SetApiRouter(router *gin.Engine) {
 		}
 
 		pexelsRoute := apiRouter.Group("/pexels")
-		pexelsRoute.Use(middleware.AdminAuth())
+		pexelsRoute.Use(middleware.UserAuth())
 		{
 			pexelsRoute.GET("/keys", controller.GetPexelsKeys)
 			pexelsRoute.PUT("/keys", controller.UpdatePexelsKeys)
